@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prayer TV - Masjid Jami' Nurul Qolbi</title>
+    <style>
+        :root { --gold: #FFD700; --emerald: #10893e; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: #000; color: #fff; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar Vertikal */
+        #sidebar { width: 350px; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(15px); padding: 30px; border-right: 1px solid #333; z-index: 10; }
+        .header h1 { font-size: 1.5rem; margin: 0; color: var(--gold); }
+        .jadwal-item { padding: 15px 0; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+        
+        /* Main View */
+        #main-view { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        #timer-display { font-size: 15rem; font-weight: bold; color: var(--gold); }
+        #status-text { font-size: 2rem; margin-top: 20px; }
+        
+        /* Running Text */
+        #marquee { position: absolute; bottom: 20px; width: 100%; background: rgba(0,0,0,0.5); padding: 10px 0; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="header">
+        <h1>MASJID JAMI' NURUL QOLBI</h1>
+        <p>Perum Dian Anyar, Purwakarta</p>
+    </div>
+    <div id="jadwal-list"></div>
+</div>
+
+<div id="main-view">
+    <div id="status-text">Menunggu Waktu Sholat</div>
+    <div id="timer-display">00:00</div>
+    <div id="marquee"><marquee behavior="scroll" direction="left" scrollamount="3" id="running-text-content"></marquee></div>
+</div>
+
+<script>
+    // 1. Fetch Data API (Purwakarta ID: 1615)
+    async function updateJadwal() {
+        const res = await fetch('https://api.myquran.com/v2/sholat/jadwal/1615/2026/06/18');
+        const data = await res.json();
+        const j = data.data.jadwal;
+        document.getElementById('jadwal-list').innerHTML = `
+            <div class="jadwal-item"><span>SUBUH</span> <span>${j.subuh}</span></div>
+            <div class="jadwal-item"><span>DZUHUR</span> <span>${j.dzuhur}</span></div>
+            <div class="jadwal-item"><span>ASHAR</span> <span>${j.ashar}</span></div>
+            <div class="jadwal-item"><span>MAGHRIB</span> <span>${j.maghrib}</span></div>
+            <div class="jadwal-item"><span>ISYA</span> <span>${j.isya}</span></div>
+        `;
+    }
+
+    // 2. Load Data dari CSV (Running Text)
+    async function loadConfig() {
+        const csvUrl = 'PASTE_LINK_PUBLISH_CSV_ANDA_DI_SINI'; 
+        const res = await fetch(csvUrl);
+        const text = await res.text();
+        // Logika parsing CSV sederhana akan dimasukkan di sini
+        document.getElementById('running-text-content').innerText = "Selamat Datang di Masjid Jami' Nurul Qolbi...";
+    }
+
+    // Eksekusi
+    updateJadwal();
+    loadConfig();
+    setInterval(updateJadwal, 60000);
+</script>
+</body>
+</html>
