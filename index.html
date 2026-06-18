@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prayer TV</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
+        
+        /* Layout Header: Sejajar kiri, tengah, kanan */
+        .header { display: flex; justify-content: space-between; padding: 20px; align-items: flex-start; }
+        
+        /* Jam */
+        #jam { font-size: 3rem; font-weight: bold; }
+        
+        /* Jadwal */
+        .jadwal-baris { display: flex; justify-content: space-between; padding: 20px; margin-top: 50px; }
+        .kotak { background: #222; padding: 20px; width: 14%; text-align: center; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div id="jam">00:00:00</div>
+    <div style="text-align: center;">
+        <h1 style="margin:0;">MASJID JAMI' NURUL QOLBI</h1>
+        <div>Perum Dian Anyar, Purwakarta</div>
+    </div>
+    <div style="text-align: right;">
+        <div id="tgl">...</div>
+    </div>
+</div>
+
+<div class="jadwal-baris" id="jadwal">Memuat...</div>
+
+<script>
+    async function init() {
+        const now = new Date();
+        document.getElementById('jam').innerText = now.toLocaleTimeString('id-ID', { hour12: false });
+        document.getElementById('tgl').innerText = now.toLocaleDateString('id-ID');
+
+        const res = await fetch('https://api.myquran.com/v2/sholat/jadwal/1615/' + now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate());
+        const data = await res.json();
+        const j = data.data.jadwal;
+        
+        document.getElementById('jadwal').innerHTML = `
+            <div class="kotak">Subuh<br><b>${j.subuh}</b></div>
+            <div class="kotak">Syuruq<br><b>${j.terbit}</b></div>
+            <div class="kotak">Dzuhur<br><b>${j.dzuhur}</b></div>
+            <div class="kotak">Ashar<br><b>${j.ashar}</b></div>
+            <div class="kotak">Maghrib<br><b>${j.maghrib}</b></div>
+            <div class="kotak">Isya<br><b>${j.isya}</b></div>
+        `;
+    }
+    setInterval(init, 1000);
+    init();
+</script>
+</body>
+</html>
