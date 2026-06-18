@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prayer TV - Nurul Qolbi</title>
+    <style>
+        body { margin: 0; font-family: 'Arial', sans-serif; background: #000; color: #fff; height: 100vh; overflow: hidden; }
+        #bg-video { position: fixed; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+
+        /* Header Container - Menggunakan Flex agar sejajar */
+        .header-container { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; }
+
+        /* Jam Kiri Atas */
+        .jam-posisi { text-align: left; }
+        #jam-utama { font-size: 4rem; font-weight: bold; }
+        
+        /* Nama Masjid Tengah */
+        .masjid-posisi { text-align: center; }
+        .masjid-posisi h1 { margin: 0; font-size: 1.8rem; color: #FFD700; }
+
+        /* Tanggal Kanan Atas */
+        .tgl-posisi { text-align: right; }
+
+        /* Jadwal Sholat - Posisi Bawah */
+        .jadwal-container { position: absolute; bottom: 30px; left: 20px; right: 20px; display: flex; justify-content: space-between; gap: 15px; }
+        .j-card { background: rgba(0,0,0,0.7); padding: 20px; border-radius: 10px; flex: 1; text-align: center; }
+        .j-nama { display: block; font-size: 1.2rem; color: #FFD700; }
+        .j-waktu { font-size: 2.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop id="bg-video">
+    <source src="LINK_VIDEO_ANDA_DI_SINI.mp4" type="video/mp4">
+</video>
+
+<div class="header-container">
+    <div class="jam-posisi">
+        <div id="jam-utama">00:00:00</div>
+        <div style="font-size: 1rem;">WAKTU SEKARANG</div>
+    </div>
+    <div class="masjid-posisi">
+        <h1>MASJID JAMI' NURUL QOLBI</h1>
+        <div>Perum Dian Anyar, Purwakarta</div>
+    </div>
+    <div class="tgl-posisi">
+        <div id="tgl-masehi" style="font-size: 1.1rem;"></div>
+        <div id="tgl-hijriah" style="color: #FFD700; font-size: 1.1rem;"></div>
+    </div>
+</div>
+
+<div class="jadwal-container" id="list-sholat">
+    </div>
+
+<script>
+    async function updateApp() {
+        const now = new Date();
+        document.getElementById('jam-utama').innerText = now.toLocaleTimeString('id-ID', { hour12: false });
+        document.getElementById('tgl-masehi').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+        const resHijri = await fetch('https://api.aladhan.com/v1/gToH?date=' + now.getDate() + '-' + (now.getMonth()+1) + '-' + now.getFullYear());
+        const dataHijri = await resHijri.json();
+        document.getElementById('tgl-hijriah').innerText = dataHijri.data.hijri.date + " " + dataHijri.data.hijri.month.en;
+
+        const resSholat = await fetch('https://api.myquran.com/v2/sholat/jadwal/1615/' + now.getFullYear() + '/' + (now.getMonth()+1) + '/' + now.getDate());
+        const dataSholat = await resSholat.json();
+        const j = dataSholat.data.jadwal;
+        
+        document.getElementById('list-sholat').innerHTML = `
+            <div class="j-card"><span class="j-nama">Subuh</span><span class="j-waktu">${j.subuh}</span></div>
+            <div class="j-card"><span class="j-nama">Syuruq</span><span class="j-waktu">${j.terbit}</span></div>
+            <div class="j-card"><span class="j-nama">Dzuhur</span><span class="j-waktu">${j.dzuhur}</span></div>
+            <div class="j-card"><span class="j-nama">Ashar</span><span class="j-waktu">${j.ashar}</span></div>
+            <div class="j-card"><span class="j-nama">Maghrib</span><span class="j-waktu">${j.maghrib}</span></div>
+            <div class="j-card"><span class="j-nama">Isya</span><span class="j-waktu">${j.isya}</span></div>
+        `;
+    }
+    setInterval(updateApp, 1000);
+    updateApp();
+</script>
+</body>
+</html>
