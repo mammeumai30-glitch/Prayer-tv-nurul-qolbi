@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        
+        /* Fixed Header */
+        .top-bar { height: 120px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 2px solid #333; }
+        
+        /* Grid Tengah (Isinya hanya Sidebar dan Content) */
+        .middle-container { height: calc(100vh - 180px); display: grid; grid-template-columns: 280px 1fr; }
+        
+        /* Fixed Footer */
+        .bottom-bar { height: 60px; background: #FFD700; color: #000; display: flex; align-items: center; font-size: 1.5rem; font-weight: bold; }
+        
+        /* Komponen */
+        #jam { width: 200px; font-size: 2.2rem; font-weight: bold; }
+        .masjid-box { flex: 1; text-align: center; }
+        .masjid-box h1 { margin: 0; font-size: 2.2rem; color: #FFD700; }
+        .tgl-box { width: 250px; text-align: right; }
+        .sidebar { padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .kotak-jadwal { background: #1a1a1a; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 1.3rem; }
+        .nama-sholat { color: #FFD700; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div id="jam">00:00</div>
+        <div class="masjid-box"><h1>MASJID JAMI' NURUL QOLBI</h1></div>
+        <div class="tgl-box">19 Juni 2026</div>
+    </div>
+    
+    <div class="middle-container">
+        <div class="sidebar" id="list-sholat">Jadwal...</div>
+        <div class="content"></div>
+    </div>
+    
+    <div class="bottom-bar">
+        <marquee scrollamount="4">Selamat datang di Masjid Jami' Nurul Qolbi. Mari makmurkan masjid dengan sholat berjamaah tepat waktu.</marquee>
+    </div>
+
+    <script>
+        // Data fetch yang sama...
+        async function update() {
+            // ... logika update ...
+        }
+        update();
+    </script>
+</body>
+</html>
