@@ -21,12 +21,19 @@
         /* Kotak Jadwal */
         .kotak-jadwal { background: #1a1a1a; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 1.3rem; color: #fff; transition: background 0.3s; }
         
-        /* Hijau Stabilo & Font Hitam */
-        .active-sholat { background: #32CD32 !important; color: #000 !important; font-weight: bold; }
-        .active-sholat .nama-sholat { color: #000 !important; }
-        .active-sholat span { color: #000 !important; }
-
         .nama-sholat { color: #FFD700; font-weight: bold; }
+
+        /* REVISI WARNA: Paksa Hitam hanya saat aktif */
+        .active-sholat { 
+            background: #32CD32 !important; 
+        }
+        
+        /* Selektor ini memastikan nama sholat DAN angka berubah jadi hitam */
+        .active-sholat .nama-sholat, 
+        .active-sholat span { 
+            color: #000 !important; 
+            font-weight: bold !important; 
+        }
     </style>
 </head>
 <body>
