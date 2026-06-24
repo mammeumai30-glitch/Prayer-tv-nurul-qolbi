@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prayer TV - Nurul Qolbi</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; height: 100vh; display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 120px 1fr; grid-template-areas: "header header" "sidebar content"; overflow: hidden; }
+        .header { grid-area: header; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        #jam { width: 250px; font-size: 2.5rem; font-weight: bold; font-family: monospace; }
+        .masjid-box { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .masjid-box h1 { margin: 0; font-size: 2.6rem; color: #FFD700; font-family: 'Times New Roman', serif; }
+        .alamat { font-size: 1.3rem; margin-top: 2px; }
+        .tgl-box { width: 250px; text-align: right; font-size: 1.2rem; }
+        .sidebar { grid-area: sidebar; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .kotak-jadwal { background: #1a1a1a; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 1.3rem; color: #fff; transition: background 0.3s; }
+        .active-sholat { background: #32CD32 !important; }
+        .active-sholat * { color: #000 !important; font-weight: bold !important; }
+        .nama-sholat { color: #FFD700; font-weight: bold; }
+        .active-sholat .nama-sholat { color: #000 !important; }
+        .running-text-fixed { position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; background: #FFD700; color: #000; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; z-index: 9999; }
+        #adzan-mode { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 999999; }
+        #persiapan-text { font-family: 'Arial Narrow', sans-serif; font-size: 5rem; color: #CCFF00; margin-bottom: 20px; text-transform: uppercase; font-weight: bold; }
+        #countdown-text { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; }
+        #iqomah-timer { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; }
+        #jam-sholat { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; }
+        #progress-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 20px; z-index: 1000; }
+        #progress-container { width: 500px; height: 60px; background: #333; border: 4px solid #fff; border-radius: 12px; overflow: hidden; position: relative; }
+        #progress-bar { height: 100%; width: 0%; transition: width 1s linear, background-color 0.5s ease; position: absolute; left: 0; top: 0; }
+        #battery-head { width: 20px; height: 30px; background: #fff; border-radius: 0 6px 6px 0; margin-left: 2px; }
+    </style>
+</head>
+<body>
+<button onclick="playAlert()" style="position:fixed; bottom:10px; left:10px; z-index:99999; background:transparent; border:none; color:#FFD700; font-size:1.5rem; cursor:pointer; font-weight:bold;">🔊</button>
+<div class="header">
+    <div id="jam">00:00:00</div>
+    <div class="masjid-box"><h1>MASJID JAMI' NURUL QOLBI</h1><div class="alamat">Perumahan Dian Anyar, Purwakarta 41118</div></div>
+    <div class="tgl-box"><div id="tgl-masehi">Memuat...</div><div id="tgl-hijriah" style="color: #FFD700; margin-top: 5px;"></div></div>
+</div>
+<div class="sidebar" id="list-sholat"></div>
+<div class="running-text-fixed"><marquee scrollamount="3">Selamat datang di Masjid Jami' Nurul Qolbi. Mari makmurkan masjid dengan sholat berjamaah tepat waktu.</marquee></div>
+<div id="adzan-mode">
+    <div id="persiapan-text"></div>
+    <div id="countdown-text"></div>
+    <div id="progress-wrapper" style="display:none;">
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <div id="battery-head"></div>
+    </div>
+</div>
+
+<script>
+    let jadwal = null;
+    const audioBeep = new Audio('https://github.com/mammeumai30-glitch/Prayer-tv-nurul-qolbi/raw/main/soft%20alert.mp3');
+    function playAlert() { audioBeep.play().catch(e => console.log(e)); }
+
+    async function init() {
+        const now = new Date(); 
+        document.getElementById('tgl-masehi').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const resH = await fetch(`https://api.aladhan.com/v1/timings/${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}?latitude=-6.5594&longitude=107.4478&method=11`);
+        const dataH = await resH.json();
+        const h = dataH.data.date.hijri;
+        document.getElementById('tgl-hijriah').innerText = `${h.day} ${h.month.en} ${h.year} H`;
+        const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRly2lYE664Weh76yXLbQrFd_EjXS1csosjHS21QK5yhPeuRcfK-QGngcIjrZOWp9N-rnsE_bFymAeq/pub?gid=761413076&single=true&output=csv';
+        try {
+            const res = await fetch(csvUrl);
+            const data = await res.text();
+            const rows = data.split('\n');
+            const hasilAkhir = rows[3].split(','); 
+            jadwal = { imsak: hasilAkhir[1].trim(), subuh: hasilAkhir[2].trim(), terbit: hasilAkhir[3].trim(), dzuhur: hasilAkhir[4].trim(), ashar: hasilAkhir[5].trim(), maghrib: hasilAkhir[6].trim(), isya: hasilAkhir[7].trim() };
+            const urutan = ['imsak', 'subuh', 'terbit', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+            document.getElementById('list-sholat').innerHTML = urutan.map(k => `<div class="kotak-jadwal" id="jadwal-${k}"><span class="nama-sholat">${k.toUpperCase()}</span><span>${jadwal[k]}</span></div>`).join('');
+        } catch (e) { console.error(e); }
+    }
+
+    function update() {
+        const now = new Date(); 
+        document.getElementById('jam').innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':');
+        if (!jadwal) return;
+        let activeSholat = null; let minDiff = Infinity;
+        const urutan = ['imsak', 'subuh', 'terbit', 'dzuhur', 'ashar', 'maghrib', 'isya'];
+        urutan.forEach(waktu => {
+            const [h, m] = jadwal[waktu].split(':');
+            const tJadwal = new Date(); tJadwal.setHours(parseInt(h), parseInt(m), 0);
+            const diff = (tJadwal - now) / 1000;
+            if (diff >= -1500 && diff < minDiff) { minDiff = diff; activeSholat = waktu; }
+            document.getElementById('jadwal-'+waktu).classList.remove('active-sholat');
+        });
+        if (activeSholat) {
+            document.getElementById('jadwal-'+activeSholat).classList.add('active-sholat');
+            renderAdzanMode(minDiff, activeSholat);
+        } else {
+            document.getElementById('adzan-mode').style.display = 'none';
+        }
+    }
+
+    function renderAdzanMode(diff, waktu) {
+        const adzan = document.getElementById('adzan-mode'), pText = document.getElementById('persiapan-text'), cText = document.getElementById('countdown-text'), pWrap = document.getElementById('progress-wrapper'), pBar = document.getElementById('progress-bar');
+        
+        if (Math.floor(diff) === 60) playAlert();
+
+        if (diff > 0 && diff <= 60) {
+            adzan.style.display = 'flex'; pText.innerText = "PERSIAPAN ADZAN"; cText.innerText = Math.floor(diff); pWrap.style.display = 'none';
+        } else if (diff <= 0 && diff >= -240) {
+            adzan.style.display = 'flex'; pText.innerText = "SAAT ADZAN HARAP TENANG"; cText.innerText = ""; pWrap.style.display = 'flex';
+            const elapsed = Math.abs(diff); pBar.style.width = (elapsed / 240) * 100 + "%"; pBar.style.backgroundColor = elapsed <= 80 ? '#FF0033' : elapsed <= 160 ? '#FFFF00' : '#00C853';
+        } else if (diff < -240 && diff > (-240 - (waktu === 'subuh' ? 600 : 360))) {
+            adzan.style.display = 'flex';
+            let durasi = (waktu === 'subuh' ? 600 : 360);
+            let sisa = durasi - (Math.abs(diff) - 240);
+            pText.innerHTML = 'IQOMAH<div id="iqomah-timer">' + Math.floor(sisa/60).toString().padStart(2,'0') + ':' + Math.floor(sisa%60).toString().padStart(2,'0') + '</div>'; 
+            cText.innerText = ""; pWrap.style.display = 'none';
+        } else if (diff <= -600 && diff > -900) {
+            adzan.style.display = 'flex'; pText.innerHTML = 'WAKTU SHOLAT<div id="jam-sholat">' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') + '</div>'; cText.innerText = ""; pWrap.style.display = 'none';
+        } else {
+            adzan.style.display = 'none';
+        }
+    }
+
+    init(); setInterval(update, 1000); setInterval(init, 3600000); setInterval(() => { location.reload(); }, 3600000);
+</script>
+</body>
+</html>
