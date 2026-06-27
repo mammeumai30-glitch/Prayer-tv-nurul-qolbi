@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prayer TV - Nurul Qolbi</title>
+    <style>
+        body { margin: 0; background: #000; color: #fff; font-family: sans-serif; height: 100vh; display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 120px 1fr; grid-template-areas: "header header" "sidebar content"; overflow: hidden; }
+        .header { grid-area: header; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; }
+        #jam { width: 250px; font-size: 2.5rem; font-weight: bold; font-family: monospace; }
+        .masjid-box { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .masjid-box h1 { margin: 0; font-size: 2.6rem; color: #FFD700; font-family: 'Times New Roman', serif; }
+        .alamat { font-size: 1.3rem; margin-top: 2px; }
+        .tgl-box { width: 250px; text-align: right; font-size: 1.2rem; }
+        .sidebar { grid-area: sidebar; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+        .kotak-jadwal { background: #1a1a1a; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 1.3rem; color: #fff; transition: background 0.3s; }
+        .active-sholat { background: #32CD32 !important; }
+        .active-sholat * { color: #000 !important; font-weight: bold !important; }
+        .nama-sholat { color: #FFD700; font-weight: bold; }
+        .active-sholat .nama-sholat { color: #000 !important; }
+        .running-text-fixed { position: fixed; bottom: 0; left: 0; width: 100%; height: 50px; background: #FFD700; color: #000; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; z-index: 9999; }
+        
+        #adzan-mode { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 999999; }
+        #bg-adzan-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+        .content-adzan { position: relative; z-index: 1; }
+        
+        #persiapan-text { font-family: 'Arial Narrow', sans-serif; font-size: 5rem; color: #CCFF00; margin-bottom: 20px; text-transform: uppercase; font-weight: bold; text-shadow: 2px 2px 4px #000; }
+        #countdown-text { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; text-shadow: 4px 4px 6px #000; }
+        #iqomah-timer { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; text-shadow: 4px 4px 6px #000; }
+        #jam-sholat { font-family: 'Arial Narrow', sans-serif; font-size: 15rem; color: #CCFF00; font-weight: bold; line-height: 1; text-shadow: 4px 4px 6px #000; }
+        #progress-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 20px; }
+        #progress-container { width: 500px; height: 60px; background: #333; border: 4px solid #fff; border-radius: 12px; overflow: hidden; position: relative; }
+        #progress-bar { height: 100%; width: 0%; transition: width 1s linear, background-color 0.5s ease; position: absolute; left: 0; top: 0; }
+        #battery-head { width: 20px; height: 30px; background: #fff; border-radius: 0 6px 6px 0; margin-left: 2px; }
+        #iqomah-text { font-family: 'Arial Narrow', sans-serif; font-size: 5rem; color: #CCFF00; margin-bottom: 20px; text-transform: uppercase; text-shadow: 2px 2px 4px #000; }
+        #sholat-text { font-family: 'Arial Narrow', sans-serif; font-size: 5rem; color: #CCFF00; margin-bottom: 20px; text-transform: uppercase; text-shadow: 2px 2px 4px #000; }
+    </style>
+</head>
+<body>
+<button onclick="playAlert()" style="position:fixed; bottom:10px; left:10px; z-index:99999; background:transparent; border:none; color:#FFD700; font-size:1.5rem; cursor:pointer; font-weight:bold;">🔊</button>
+<div class="header">
+    <div id="jam">00:00:00</div>
+    <div class="masjid-box"><h1>MASJID JAMI' NURUL QOLBI</h1><div class="alamat">Perumahan Dian Anyar, Purwakarta 41118</div></div>
+    <div class="tgl-box"><div id="tgl-masehi">Memuat...</div><div id="tgl-hijriah" style="color: #FFD700; margin-top: 5px;"></div></div>
+</div>
+<div class="sidebar" id="list-sholat"></div>
+<div class="running-text-fixed"><marquee id="running-text-marquee" scrollamount="3">Selamat datang di Masjid Jami' Nurul Qolbi. Mari makmurkan masjid dengan sholat berjamaah tepat waktu.</marquee></div>
+
+<div id="adzan-mode">
+    <img id="bg-adzan-img" src="" alt="Background">
+    <div class="content-adzan">
+        <div id="persiapan-text"></div>
+        <div id="countdown-text"></div>
+        <div id="progress-wrapper" style="display:none;"><div id="progress-container"><div id="progress-bar"></div></div><div id="battery-head"></div></div>
+    </div>
+</div>
+
+<script>
+    let jadwal = null; let config = {}; let playedAdzan = false; let playedIqomah = false;
+    const audioBeep = new Audio('https://github.com/mammeumai30-glitch/Prayer-tv-nurul-qolbi/raw/main/soft%20alert.mp3');
+    function playAlert() { audioBeep.play().catch(e => console.log("Menunggu interaksi")); }
+
+    async function loadSheet3() {
+        try {
+            const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRly2lYE664Weh76yXLbQrFd_EjXS1csosjHS21QK5yhPeuRcfK-QGngcIjrZOWp9N-rnsE_bFymAeq/pub?gid=1745632409&single=true&output=csv');
+            const data = await res.text();
+            const rows = data.split('\n');
+            if (rows.length > 1) {
+                const cols = rows[1].split(','); 
+                config = {
+                    namaMasjid: cols[0]?.trim(), alamat: cols[1]?.trim(),
+                    bgPersiapan: cols[9]?.trim(), bgAdzan: cols[11]?.trim(), 
+                    bgIqomah: cols[13]?.trim(), runningText: cols[8]?.trim()
+                };
+            }
+        } catch (e) { console.error("Gagal load Sheet3", e); }
+    }
+
+    async function loadJadwalFromSheet() {
+        try {
+            const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRly2lYE664Weh76yXLbQrFd_EjXS1csosjHS21QK5yhPeuRcfK-QGngcIjrZOWp9N-rnsE_bFymAeq/pub?gid=761413076&single=true&output=csv');
+            const data = await res.text();
+            const rows = data.split('\n');
+            rows.forEach(row => {
+                if (row.includes('Hasil Akhir')) {
+                    const cols = row.split(',');
+                    jadwal = { imsak: cols[3].trim(), subuh: cols[4].trim(), terbit: cols[5].trim(), dzuhur: cols[6].trim(), ashar: cols[7].trim(), maghrib: cols[8].trim(), isya: cols[9].trim() };
+                }
+            });
+            if (jadwal) {
+                document.getElementById('list-sholat').innerHTML = Object.entries(jadwal).map(([k,v]) => 
+                    `<div class="kotak-jadwal" id="jadwal-${k}"><span class="nama-sholat">${k.toUpperCase()}</span><span>${v}</span></div>`
+                ).join('');
+            }
+        } catch (e) { console.error("Gagal load Sheet2", e); }
+    }
+
+    function renderAdzanMode(diff, waktu, bgLink) {
+        const adzan = document.getElementById('adzan-mode'), pText = document.getElementById('persiapan-text'), cText = document.getElementById('countdown-text'), pWrap = document.getElementById('progress-wrapper'), pBar = document.getElementById('progress-bar'), bgImg = document.getElementById('bg-adzan-img');
+        
+        adzan.style.display = 'flex';
+        bgImg.src = bgLink || "";
+        
+        if (diff > 0 && diff <= 60) {
+            if (Math.floor(diff) >= 3 && Math.floor(diff) < 4 && !playedAdzan) { playAlert(); playedAdzan = true; }
+            pText.innerText = "PERSIAPAN ADZAN"; cText.innerText = Math.floor(diff); pWrap.style.display = 'none';
+        } else if (diff <= 0 && diff >= -240) {
+            playedAdzan = false;
+            pText.innerText = "SAAT ADZAN HARAP TENANG"; cText.innerText = ""; pWrap.style.display = 'flex'; const elapsed = Math.abs(diff); pBar.style.width = (elapsed / 240) * 100 + "%"; pBar.style.backgroundColor = elapsed <= 80 ? '#FF0033' : elapsed <= 160 ? '#FFFF00' : '#00C853';
+        } else if (diff < -240) {
+            const sisaIqomah = ((waktu === 'subuh') ? 600 : 360) - (Math.abs(diff) - 240);
+            if (sisaIqomah > 0) { 
+                if (Math.floor(sisaIqomah) >= 3 && Math.floor(sisaIqomah) < 4 && !playedIqomah) { playAlert(); playedIqomah = true; }
+                pText.innerHTML = '<div id="iqomah-text">IQOMAH</div><div id="iqomah-timer">' + Math.floor(sisaIqomah/60).toString().padStart(2,'0') + ':' + Math.floor(sisaIqomah%60).toString().padStart(2,'0') + '</div>'; cText.innerText = ""; pWrap.style.display = 'none'; 
+            } else if (sisaIqomah <= 0 && sisaIqomah > -600) { 
+                playedIqomah = false;
+                bgImg.src = ""; adzan.style.backgroundColor = '#000'; pText.innerHTML = '<div id="sholat-text">WAKTU SHOLAT</div><div id="jam-sholat">' + new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') + '</div>'; 
+            } else { adzan.style.display = 'none'; }
+        }
+    }
+
+    async function init() {
+        const now = new Date(); document.getElementById('tgl-masehi').innerText = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        await loadJadwalFromSheet();
+        await loadSheet3();
+        if (config.namaMasjid) document.querySelector('.masjid-box h1').innerText = config.namaMasjid;
+        if (config.alamat) document.querySelector('.alamat').innerText = config.alamat;
+        if (config.runningText) document.getElementById('running-text-marquee').innerText = config.runningText;
+        try {
+            const resJ = await fetch(`https://api.aladhan.com/v1/timings/${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}?latitude=-6.5594&longitude=107.4478&method=11`);
+            const dataJ = await resJ.json(); const h = dataJ.data.date.hijri; document.getElementById('tgl-hijriah').innerText = `${h.day} ${h.month.en} ${h.year} H`;
+        } catch(e) {}
+    }
+    init(); 
+    setInterval(async () => {
+        const now = new Date(); if (!jadwal) return;
+        let activeWaktu = null;
+        ['subuh', 'dzuhur', 'ashar', 'maghrib', 'isya'].forEach((waktu) => {
+            const [h, m] = jadwal[waktu].split(':'); 
+            const tAdzan = new Date(); tAdzan.setHours(parseInt(h), parseInt(m), 0);
+            const diff = (tAdzan - now) / 1000;
+            if (diff >= -900 && diff <= 60) activeWaktu = {waktu: waktu, diff: diff, bg: (diff>0)?config.bgPersiapan:(diff>-240?config.bgAdzan:config.bgIqomah)};
+        });
+        if (activeWaktu) renderAdzanMode(activeWaktu.diff, activeWaktu.waktu, activeWaktu.bg);
+        else { document.getElementById('adzan-mode').style.display = 'none'; playedAdzan = false; playedIqomah = false; }
+    }, 1000);
+    setInterval(init, 3600000); 
+</script>
+</body>
+</html>
