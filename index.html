@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Prayer TV - Nurul Qolbi</title>
+<style>
+@font-face {
+  font-family: 'MontserratLocal';
+  src: url('https://raw.githubusercontent.com/mammeumai30-glitch/Prayer-tv-nurul-qolbi/main/Montserrat-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: sans-serif;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 120px 1fr;
+  grid-template-areas: "header header" "sidebar content";
+  overflow: hidden;
+}
+.header {
+  grid-area: header;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 20px;
+}
+#jam { width: 250px; font-size: 2.5rem; font-weight: bold; font-family: monospace; }
+.masjid-box { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.masjid-box h1 { margin: 0; font-size: 2.6rem; color: #FFD700; font-family: 'Times New Roman', serif; }
+.alamat {
+  font-size: 1.2rem;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.tgl-box { width: 250px; text-align: right; font-size: 1.2rem; }
+.sidebar { grid-area: sidebar; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+.kotak-jadwal { background: #1a1a1a; padding: 15px; border-radius: 6px; display: flex; justify-content: space-between; font-size: 1.3rem; color: #fff; }
+
+/* === BLOK AKTIF DENGAN GLOW STATIS (TANPA ANIMASI) === */
+.active-sholat {
+  background: #32CD32!important;
+  color: #000!important;
+  font-weight: bold!important;
+  position: relative;
+  border-radius: 6px;
+  box-shadow:
+    0 0 10px #32CD32,
+    0 0 20px #32CD32,
+    0 0 40px #32CD32,
+    0 0 60px rgba(50, 205, 50, 0.5);
+}
+.active-sholat * { color: #000!important; font-weight: bold!important; }
+
+.nama-sholat { color: #FFD700; font-weight: bold; }
+.running-text-fixed {
+  position: fixed; bottom: 0; left: 0; width: 100%; height: 50px;
+  background: #FFD700; color: #000; font-size: 1.5rem; font-weight: bold;
+  display: flex; align-items: center; z-index: 9999;
+}
+#video-background {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -2; display: none;
+}
+#adzan-mode {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000;
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; z-index: 999999;
+}
+#bg-adzan-img {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center; z-index: -1;
+}
+
+/* ==================== FONT MONTSERRAT DIPAKSA ==================== */
+#persiapan-text,
+#countdown-text,
+#iqomah-text,
+#iqomah-timer,
+#sholat-text,
+#jam-sholat {
+  font-family: 'MontserratLocal', sans-serif !important;
+  font-weight: 600 !important; text-shadow: 0 4px 18px rgba(0,0,0,0.95);
+}
+
+#persiapan-text { font-size: 5rem; color: #F5F1E8; margin-bottom: 20px; text-transform: uppercase; }
+#countdown-text { font-size: 15rem; color: #E8D27A; line-height: 1; }
+#iqomah-text { font-size: 5rem; color: #F5F1E8; margin-bottom: 20px; text-transform: uppercase; }
+#iqomah-timer { font-size: 15rem; color: #E8D27A; line-height: 1; }
+#sholat-text { font-size: 5rem; color: #F5F1E8; margin-bottom: 20px; text-transform: uppercase; }
+#jam-sholat { font-size: 15rem; color: #E8D27A; line-height: 1; }
+
+#progress-wrapper { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 20px; z-index: 1000; }
+#progress-container { width: 500px; height: 60px; background: #333; border: 4px solid #fff; border-radius: 12px; overflow: hidden; position: relative; }
+#progress-bar { height: 100%; width: 0%; transition: width 1s linear, background-color .5s ease; position: absolute; left: 0; top: 0; }
+#battery-head { width: 20px; height: 30px; background: #fff; border-radius: 0 6px 6px 0; margin-left: 2px; }
+.fade-in-anim { animation: fadeInAdzan 3s ease forwards; }
+.fade-out-anim { animation: fadeOutAdzan 3s ease forwards; }
+.slow-zoom { animation: slowZoom 60s ease-out forwards; transform-origin: center center; }
+@keyframes fadeInAdzan { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOutAdzan { from { opacity: 1; } to { opacity: 0; } }
+@keyframes slowZoom { from { transform: scale(1); } to { transform: scale(1.08); } }
+</style>
+</head>
+<body>
+<button onclick="playAlert()" style="position:fixed;bottom:10px;left:10px;z-index:99999;background:transparent;border:none;color:#FFD700;font-size:1.5rem;cursor:pointer;font-weight:bold;">🔊</button>
+
+<video id="video-background" muted playsinline></video>
+
+<div class="header">
+  <div id="jam">00:00:00</div>
+  <div class="masjid-box">
+    <h1>MASJID JAMI' NURUL QOLBI</h1>
+    <div class="alamat">Perumahan Dian Anyar, Purwakarta 41118</div>
+  </div>
+  <div class="tgl-box"><div id="tgl-masehi">Memuat...</div><div id="tgl-hijriah" style="color:#FFD700;margin-top:5px;"></div></div>
+</div>
+
+<div class="sidebar" id="list-sholat"></div>
+
+<div class="running-text-fixed"><marquee id="running-text-marquee" scrollamount="3">Selamat datang di Masjid Jami' Nurul Qolbi. Mari makmurkan masjid dengan sholat berjamaah tepat waktu.</marquee></div>
+
+<div id="adzan-mode">
+  <img id="bg-adzan-img" src="" alt="Background">
+  <div id="persiapan-text"></div>
+  <div id="countdown-text"></div>
+  <div id="progress-wrapper" style="display:none;">
+    <div id="progress-container"><div id="progress-bar"></div></div><div id="battery-head"></div>
+  </div>
+</div>
+
+<script>
+let jadwal=null,config={},playedAdzan=false,playedIqomah=false;
+let currentAdzanMode="";
+let videoList=[],currentVideoIndex=0,videoElement;
+const audioBeep=new Audio('https://github.com/mammeumai30-glitch/Prayer-tv-nurul-qolbi/raw/main/soft%20alert.mp3');
+function playAlert(){audioBeep.play().catch(()=>{});}
+
+function initVideoPlayer(){
+  videoElement=document.getElementById('video-background');
+  videoElement.onended=playNextVideo;
+}
+
+function loadVideoSources(){
+  videoList=[];
+  if(config.vid1) videoList.push({src:config.vid1,durasi:config.durasiVid1||600});
+  if(config.vid2) videoList.push({src:config.vid2,durasi:config.durasiVid2||600});
+  if(config.vid3) videoList.push({src:config.vid3,durasi:config.durasiVid3||600});
+}
+
+function playNextVideo(){
+  if(videoList.length===0)return;
+  currentVideoIndex=(currentVideoIndex+1)%videoList.length;
+  const nextVideo=videoList[currentVideoIndex];
+  videoElement.src=nextVideo.src;
+  videoElement.play().catch(()=>{});
+}
+
+function startVideoBackground(){
+  if(videoList.length===0)return;
+  videoElement.style.display='block';
+  const firstVideo=videoList[currentVideoIndex]||videoList[0];
+  videoElement.src=firstVideo.src;
+  videoElement.play().catch(()=>{});
+}
+
+function stopVideoBackground(){
+  if(videoElement){
+    videoElement.pause();
+    videoElement.style.display='none';
+  }
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let insideQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"' && line[i + 1] === '"') {
+      current += '"';
+      i++;
+    } else if (char === '"') {
+      insideQuotes = !insideQuotes;
+    } else if (char === ',' && !insideQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+async function loadSheet3(){try{
+ const r=await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRly2lYE664Weh76yXLbQrFd_EjXS1csosjHS21QK5yhPeuRcfK-QGngcIjrZOWp9N-rnsE_bFymAeq/pub?gid=1745632409&single=true&output=csv');
+ const text=await r.text();
+ const rows=text.trim().split('\n');
+ if(rows.length<2)return;
+
+ const c = parseCSVLine(rows[1]);
+
+ config={
+   namaMasjid: c[0] || "",
+   alamat: c[1] || "",
+   vid1: c[2] || "",
+   durasiVid1: parseInt(c[3]) || 0,
+   vid2: c[4] || "",
+   durasiVid2: parseInt(c[5]) || 0,
+   vid3: c[6] || "",
+   durasiVid3: parseInt(c[7]) || 0,
+   maxDurasiVid: parseInt(c[8]) || 600,
+   linkAlert: c[9] || "",
+   info: c[10] || "",
+   runningText: c[11] || "",
+   bgPersiapan: c[12] || "",
+   durasiPersiapan: parseInt(c[13]) || 60,
+   bgAdzan: c[14] || "",
+   durasiAdzan: parseInt(c[15]) || 240,
+   bgIqomah: c[16] || "",
+   durasiIqomah: c[17] || "360/600",
+   bgWaktuSholat: c[18] || "",
+   durasiSholat: parseInt(c[19]) || 600
+ };
+
+ console.log("Running Text dari Sheet:", config.runningText);
+ loadVideoSources();
+
+}catch(e){console.error("Sheet3",e);}
+}
+
+async function loadJadwalFromSheet(){
+ try{
+  const r=await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRly2lYE664Weh76yXLbQrFd_EjXS1csosjHS21QK5yhPeuRcfK-QGngcIjrZOWp9N-rnsE_bFymAeq/pub?gid=761413076&single=true&output=csv');
+  const d=await r.text();const rows=d.split('\n');
+  rows.forEach(x=>{if(x.includes('Hasil Akhir')){
+   const c=x.split(',');
+   jadwal={imsak:c[3].trim(),subuh:c[4].trim(),terbit:c[5].trim(),
+   dzuhur:c[6].trim(),ashar:c[7].trim(),maghrib:c[8].trim(),isya:c[9].trim()};
+  }});
+  if(jadwal){document.getElementById('list-sholat').innerHTML=
+   Object.entries(jadwal).map(([k,v])=>
+    `<div class="kotak-jadwal" id="jadwal-${k}"><span class="nama-sholat">${k.toUpperCase()}</span><span>${v}</span></div>`
+   ).join('');}
+ }catch(e){console.error("Sheet2",e);}
+}
+
+async function update(){
+ const now=new Date();
+ document.getElementById('jam').innerText=
+  now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\./g,':');
+ if(!jadwal)return;
+ const urutan=['subuh','dzuhur','ashar','maghrib','isya'];
+ let next=null;
+ for(let w of urutan){const[h,m]=jadwal[w].split(':');const t=new Date();t.setHours(+h,+m,0);if(t>now){next=w;break;}}
+ if(!next)next='subuh';
+ ['imsak','subuh','terbit','dzuhur','ashar','maghrib','isya'].forEach(x=>{
+  const e=document.getElementById('jadwal-'+x);
+  if(e)x===next?e.classList.add('active-sholat'):e.classList.remove('active-sholat');
+ });
+ let act=null;
+ function v(n,f){return Number.isFinite(n)&&n>0?n:f;}
+ urutan.forEach(w=>{
+  const[h,m]=jadwal[w].split(':');const t=new Date();t.setHours(+h,+m,0);
+  const diff=(t-now)/1000;
+  const dP=v(config.durasiPersiapan,60),dA=v(config.durasiAdzan,240),dI=v(config.durasiIqomah,w==='subuh'?600:360),dS=v(config.durasiSholat,600);
+  const total=dA+dI+dS;
+  if(diff>=-total&&diff<=dP)act={waktu:w,diff:diff};
+ });
+ if(act)renderAdzanMode(act.diff,act.waktu);
+ else{
+  const a=document.getElementById('adzan-mode'),b=document.getElementById('bg-adzan-img');
+  a.style.display='none';a.classList.remove('fade-in-anim','fade-out-anim');b.classList.remove('slow-zoom');
+  a.style.opacity='1';
+  currentAdzanMode="";playedAdzan=false;playedIqomah=false;
+  if(videoList.length>0&&videoElement.style.display==='none')startVideoBackground();
+ }
+}
+
+function renderAdzanMode(diff,waktu){
+ const adzan=document.getElementById('adzan-mode'),
+  pText=document.getElementById('persiapan-text'),
+  cText=document.getElementById('countdown-text'),
+  pWrap=document.getElementById('progress-wrapper'),
+  pBar=document.getElementById('progress-bar'),
+  bg=document.getElementById('bg-adzan-img');
+
+ function val(v,f){return Number.isFinite(v)&&v>0?v:f;}
+ const dP=val(config.durasiPersiapan,60),
+       dA=val(config.durasiAdzan,240),
+       dI=val(config.durasiIqomah,waktu==='subuh'?600:360),
+       dS=val(config.durasiSholat,600);
+
+ if(diff>0&&diff<=dP){
+   if(currentAdzanMode!=='persiapan'||adzan.style.display==='none'){
+     stopVideoBackground();
+     adzan.classList.remove('fade-in-anim','fade-out-anim');
+     adzan.style.opacity='1';
+     bg.src=config.bgPersiapan||"";bg.style.setProperty('--zoom-duration',dP+'s');
+     adzan.style.display='flex';adzan.classList.add('fade-in-anim');bg.classList.add('slow-zoom');
+     currentAdzanMode='persiapan';
+   }
+   if(Math.floor(diff)>=3&&Math.floor(diff)<4&&!playedAdzan){playAlert();playedAdzan=true;}
+   pText.innerText="PERSIAPAN ADZAN";pText.style.color="#F5F1E8";
+   cText.innerText=Math.floor(diff);cText.style.color="#E8D27A";
+   pWrap.style.display='none';
+ }
+
+ else if(diff<=0&&diff>=-dA){
+   if(currentAdzanMode!=='adzan'){
+     stopVideoBackground();
+     adzan.classList.remove('fade-in-anim','fade-out-anim');
+     adzan.style.opacity='1';
+     bg.src=config.bgAdzan||"";bg.style.setProperty('--zoom-duration',dA+'s');
+     adzan.style.display='flex';currentAdzanMode='adzan';
+   }
+   playedAdzan=false;
+   pText.innerText="SAAT ADZAN HARAP TENANG";pText.style.color="#F5F1E8";
+   cText.innerText="";pWrap.style.display='flex';
+   const el=Math.abs(diff);const per=Math.min((el/dA)*100,100);
+   pBar.style.width=per+"%";
+   pBar.style.backgroundColor=el<=dA/3?'#FF0033':el<=(dA/3)*2?'#FFFF00':'#00C853';
+ }
+
+ else if(diff<-dA){
+   const sI=dI-(Math.abs(diff)-dA);
+
+   if(sI>0){
+     if(currentAdzanMode!=='iqomah'){
+       stopVideoBackground();
+       adzan.classList.remove('fade-in-anim','fade-out-anim');
+       adzan.style.opacity='1';
+       bg.src=config.bgIqomah||"";bg.style.setProperty('--zoom-duration',dI+'s');
+       adzan.style.display='flex';currentAdzanMode='iqomah';
+     }
+     if(Math.floor(sI)>=3&&Math.floor(sI)<4&&!playedIqomah){playAlert();playedIqomah=true;}
+     pText.innerHTML='<div id="iqomah-text" style="color:#F5F1E8;">IQOMAH</div><div id="iqomah-timer" style="color:#E8D27A;">'+
+      Math.floor(sI/60).toString().padStart(2,'0')+':'+Math.floor(sI%60).toString().padStart(2,'0')+'</div>';
+     cText.innerText="";pWrap.style.display='none';
+   }
+
+   else if(sI<=0&&sI>-dS){
+     const sisa = Math.abs(sI);
+     if(currentAdzanMode!=='sholat'){
+       stopVideoBackground();
+       adzan.classList.remove('fade-in-anim','fade-out-anim');
+       adzan.style.opacity='1';
+       bg.src=config.bgWaktuSholat||"";
+       adzan.style.display='flex';currentAdzanMode='sholat';playedIqomah=false;
+     }
+     pText.innerHTML='<div id="sholat-text" style="color:#F5F1E8;">WAKTU SHOLAT</div><div id="jam-sholat" style="color:#E8D27A;">'+
+       new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\./g,':')+'</div>';
+     cText.innerText="";pWrap.style.display='none';
+
+     if(sisa >= dS - 3){
+       if(!adzan.classList.contains('fade-out-anim')){
+         adzan.classList.add('fade-out-anim');
+       }
+     }
+   }
+
+   else{
+     adzan.style.display='none';
+     adzan.style.opacity='1';
+     adzan.classList.remove('fade-in-anim','fade-out-anim');
+     currentAdzanMode="";
+     if(videoList.length>0)startVideoBackground();
+   }
+ }
+}
+
+async function init(){
+ const now=new Date();
+ document.getElementById('tgl-masehi').innerText=
+  now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ initVideoPlayer();
+ await loadJadwalFromSheet();await loadSheet3();
+ if(config.namaMasjid)document.querySelector('.masjid-box h1').innerText=config.namaMasjid;
+ if(config.alamat)document.querySelector('.alamat').innerText=config.alamat;
+ if(config.runningText)document.getElementById('running-text-marquee').innerText=config.runningText;
+ if(videoList.length>0)startVideoBackground();
+ try{
+  const res=await fetch(`https://api.aladhan.com/v1/timings/${now.getDate()}-${now.getMonth()+1}-${now.getFullYear()}?latitude=-6.5594&longitude=107.4478&method=11`);
+  const d=await res.json();const h=d.data.date.hijri;
+  document.getElementById('tgl-hijriah').innerText=`${h.day} ${h.month.en} ${h.year} H`;
+ }catch(e){}
+}
+init();setInterval(update,1000);
+</script>
+</body>
+</html>
