@@ -457,7 +457,7 @@ document.getElementById('jam-text').innerText =
 const detik = now.getSeconds();
 const mili = now.getMilliseconds();
 
-const sudut = ((detik + mili/1000) * 6) - 90;
+const sudut = ((detik + mili/1000) * 6) - 96;
 
 document.getElementById("detik-indicator").style.transform =
     `rotate(${sudut}deg)`;
